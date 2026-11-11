@@ -1,0 +1,307 @@
+const STORAGE_KEY = 'bookbuddy-state-v1';
+
+const defaultBooks = [
+  {
+    id: 1,
+    title: 'Atomic Habits',
+    author: 'James Clear',
+    type: 'Non-fiction',
+    progress: 72,
+    pages: 320,
+    lastRead: '2h ago',
+    accent: '#4f46e5',
+    tags: ['productivity', 'habits'],
+    note: 'Great reminder to improve systems, not goals.'
+  },
+  {
+    id: 2,
+    title: 'The Midnight Library',
+    author: 'Matt Haig',
+    type: 'Fiction',
+    progress: 46,
+    pages: 304,
+    lastRead: 'Yesterday',
+    accent: '#f59e0b',
+    tags: ['fiction', 'mindset'],
+    note: 'The philosophical layer is compelling and reflective.'
+  },
+  {
+    id: 3,
+    title: 'Deep Work',
+    author: 'Cal Newport',
+    type: 'Productivity',
+    progress: 84,
+    pages: 296,
+    lastRead: '3 days ago',
+    accent: '#10b981',
+    tags: ['focus', 'career'],
+    note: 'A useful template for building deeper concentration.'
+  },
+  {
+    id: 4,
+    title: 'The Psychology of Money',
+    author: 'Morgan Housel',
+    type: 'Finance',
+    progress: 28,
+    pages: 256,
+    lastRead: 'Today',
+    accent: '#ef4444',
+    tags: ['finance', 'behavior'],
+    note: 'A sharp lens on wealth, patience, and long-term decisions.'
+  }
+];
+
+const defaultHighlights = [
+  {
+    id: 1,
+    quote: 'You do not rise to the level of your goals. You fall to the level of your systems.',
+    source: 'Atomic Habits',
+    tag: 'Productivity',
+    mood: 'Insightful'
+  },
+  {
+    id: 2,
+    quote: 'A good life is not about doing more, but about choosing what matters with clarity.',
+    source: 'The Midnight Library',
+    tag: 'Reflection',
+    mood: 'Thoughtful'
+  },
+  {
+    id: 3,
+    quote: 'The ability to concentrate is a skill that compounds over time.',
+    source: 'Deep Work',
+    tag: 'Focus',
+    mood: 'Actionable'
+  }
+];
+
+const state = loadState();
+
+const els = {
+  navItems: document.querySelectorAll('.nav-item'),
+  views: document.querySelectorAll('.view'),
+  booksGrid: document.getElementById('booksGrid'),
+  highlightsGrid: document.getElementById('highlightsGrid'),
+  resultsLabel: document.getElementById('resultsLabel'),
+  privateToggle: document.getElementById('privateToggle'),
+  booksCount: document.getElementById('booksCount'),
+  streakCount: document.getElementById('streakCount'),
+  highlightsCount: document.getElementById('highlightsCount'),
+  privateStatus: document.getElementById('privateStatus'),
+  searchInput: document.getElementById('searchInput'),
+  addBookBtn: document.getElementById('addBookBtn'),
+  newHighlightBtn: document.getElementById('newHighlightBtn'),
+  focusModeBtn: document.getElementById('focusModeBtn'),
+  tagCloud: document.getElementById('tagCloud')
+};
+
+function loadState() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+
+  if (!saved) {
+    return {
+      books: [...defaultBooks],
+      highlights: [...defaultHighlights],
+      privateMode: false,
+      activeView: 'library'
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(saved);
+    return {
+      books: parsed.books || [...defaultBooks],
+      highlights: parsed.highlights || [...defaultHighlights],
+      privateMode: Boolean(parsed.privateMode),
+      activeView: parsed.activeView || 'library'
+    };
+  } catch {
+    return {
+      books: [...defaultBooks],
+      highlights: [...defaultHighlights],
+      privateMode: false,
+      activeView: 'library'
+    };
+  }
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function renderBooks() {
+  const query = els.searchInput.value.trim().toLowerCase();
+  const filtered = state.books.filter((book) => {
+    const haystack = `${book.title} ${book.author} ${book.tags.join(' ')}`.toLowerCase();
+    return !query || haystack.includes(query);
+  });
+
+  els.booksGrid.innerHTML = filtered.map((book) => `
+    <article class="book-card" style="--card-accent: ${book.accent};">
+      <div class="book-cover">
+        <span>${book.title.charAt(0)}</span>
+      </div>
+      <div class="book-main">
+        <div class="book-topline">
+          <div>
+            <h3>${book.title}</h3>
+            <p>${book.author}</p>
+          </div>
+          <span class="type-pill">${book.type}</span>
+        </div>
+        <div class="book-meta">
+          <span>${book.lastRead}</span>
+          <span>${book.progress}% complete</span>
+        </div>
+        <div class="progress-bar">
+          <span style="width: ${book.progress}%"></span>
+        </div>
+        <div class="book-footer">
+          <div class="tags-row">
+            ${book.tags.map((tag) => `<span>${tag}</span>`).join('')}
+          </div>
+          <button class="mini-btn" data-book-id="${book.id}">Open</button>
+        </div>
+      </div>
+    </article>
+  `).join('');
+
+  els.resultsLabel.textContent = `${filtered.length} result${filtered.length === 1 ? '' : 's'}`;
+  els.booksCount.textContent = String(state.books.length);
+  els.highlightsCount.textContent = String(state.highlights.length);
+  els.privateStatus.textContent = state.privateMode ? 'On' : 'Off';
+
+  document.querySelectorAll('.mini-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+      const id = Number(button.dataset.bookId);
+      const book = state.books.find((item) => item.id === id);
+      if (!book) return;
+      alert(`${book.title}\n\n${book.note}`);
+    });
+  });
+}
+
+function renderHighlights() {
+  els.highlightsGrid.innerHTML = state.highlights.map((highlight) => `
+    <article class="highlight-card">
+      <div class="quote-mark">“</div>
+      <p>"${highlight.quote}"</p>
+      <div class="highlight-meta">
+        <span>${highlight.source}</span>
+        <span class="dot">•</span>
+        <span>${highlight.tag}</span>
+      </div>
+      <div class="highlight-tag">${highlight.mood}</div>
+    </article>
+  `).join('');
+}
+
+function renderTags() {
+  const tagMap = new Map();
+
+  state.books.forEach((book) => {
+    book.tags.forEach((tag) => {
+      tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
+    });
+  });
+
+  const tags = [...tagMap.entries()].sort((a, b) => b[1] - a[1]);
+
+  els.tagCloud.innerHTML = tags.map(([tag, count]) => `
+    <button class="tag-pill" data-tag="${tag}">
+      ${tag} <span>${count}</span>
+    </button>
+  `).join('');
+
+  els.tagCloud.querySelectorAll('.tag-pill').forEach((button) => {
+    button.addEventListener('click', () => {
+      const tag = button.dataset.tag;
+      els.searchInput.value = tag;
+      renderBooks();
+    });
+  });
+}
+
+function setView(view) {
+  state.activeView = view;
+  saveState();
+
+  els.navItems.forEach((item) => {
+    item.classList.toggle('active', item.dataset.view === view);
+  });
+
+  els.views.forEach((section) => {
+    section.classList.toggle('active', section.id === `${view}View`);
+  });
+}
+
+function addBook() {
+  const nextId = Math.max(0, ...state.books.map((book) => book.id)) + 1;
+  const title = prompt('Book title', `New Book ${nextId}`);
+  if (!title) return;
+
+  const newBook = {
+    id: nextId,
+    title,
+    author: 'You',
+    type: 'Personal',
+    progress: 12,
+    pages: 180,
+    lastRead: 'Just now',
+    accent: '#22c55e',
+    tags: ['personal', 'reading'],
+    note: 'Freshly added to your library.'
+  };
+
+  state.books.unshift(newBook);
+  saveState();
+  render();
+}
+
+function addHighlight() {
+  const quote = prompt('Add a new highlight or note', 'I am building a better reading habit every day.');
+  if (!quote) return;
+
+  state.highlights.unshift({
+    id: Date.now(),
+    quote,
+    source: 'New note',
+    tag: 'Reflection',
+    mood: 'Fresh'
+  });
+
+  saveState();
+  renderHighlights();
+  els.highlightsCount.textContent = String(state.highlights.length);
+}
+
+function togglePrivateSpace() {
+  state.privateMode = els.privateToggle.checked;
+  saveState();
+  renderBooks();
+}
+
+function applyFocusMode() {
+  document.body.classList.toggle('focus-mode');
+}
+
+els.navItems.forEach((button) => {
+  button.addEventListener('click', () => setView(button.dataset.view));
+});
+
+els.searchInput.addEventListener('input', renderBooks);
+els.addBookBtn.addEventListener('click', addBook);
+els.newHighlightBtn.addEventListener('click', addHighlight);
+els.focusModeBtn.addEventListener('click', applyFocusMode);
+els.privateToggle.addEventListener('change', togglePrivateSpace);
+
+function render() {
+  els.privateToggle.checked = state.privateMode;
+  setView(state.activeView);
+  renderBooks();
+  renderHighlights();
+  renderTags();
+  els.streakCount.textContent = `${Math.min(14, 7 + state.books.length)} days`;
+}
+
+render();
