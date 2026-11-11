@@ -1,0 +1,29 @@
+.
+├── ARCHITECTURE.md
+├── CHECKLIST.md
+├── DIRECTORY_TREE.txt
+├── README.md
+├── backend
+│   ├── requirements.txt
+│   └── server.py
+├── frontend
+│   ├── app
+│   │   ├── (auth)
+│   │   ├── (tabs)
+│   │   ├── _layout.tsx
+│   │   ├── index.tsx
+│   │   ├── private_books.tsx
+│   │   └── reader
+│   ├── app.json
+│   ├── app_demo.html
+│   ├── constants
+│   │   └── theme.ts
+│   ├── contexts
+│   │   ├── AuthContext.tsx
+│   │   └── NotificationContext.tsx
+│   ├── package.json
+│   ├── private_books.tsx
+│   └── tsconfig.json
+└── setup.sh
+
+9 directories, 18 files
